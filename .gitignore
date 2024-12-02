@@ -1,2 +1,2 @@
-bin/**/*
-!bin/**/input
+bin/*/*
+!bin/*/input
