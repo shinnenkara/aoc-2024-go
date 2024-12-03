@@ -54,7 +54,11 @@ func prepareLists(lines []string, options parser.Options) (lists [][]int) {
 
 func verifyLists(lists [][]int, tolerate int, options parser.Options) (verifiedLists [][]int) {
 	for _, list := range lists {
-		safe := isSafe(list, tolerate, options)
+		safe := isSafe(list, options)
+		if !safe {
+			safe = trySafe(list, 0, tolerate, options)
+		}
+
 		if safe {
 			verifiedLists = append(verifiedLists, list)
 		}
@@ -63,7 +67,27 @@ func verifyLists(lists [][]int, tolerate int, options parser.Options) (verifiedL
 	return verifiedLists
 }
 
-func isSafe(list []int, tolerate int, options parser.Options) bool {
+func trySafe(list []int, count int, tolerate int, options parser.Options) bool {
+	if count >= tolerate {
+		return false
+	}
+
+	for i := 0; i < len(list); i++ {
+		partialList := preparePartialList(list, i, options)
+		safe := isSafe(partialList, options)
+		if !safe {
+			safe = trySafe(partialList, count+1, tolerate, options)
+		}
+
+		if safe {
+			return true
+		}
+	}
+
+	return false
+}
+
+func isSafe(list []int, options parser.Options) bool {
 	increasing := isIncreasing(list, options)
 	if increasing {
 		return isSafelyChanged(list, options)
@@ -76,6 +100,26 @@ func isSafe(list []int, tolerate int, options parser.Options) bool {
 	utils.PrintOnDebug(options.Debug, fmt.Sprintf("list is not safe: %+v\n", list))
 
 	return false
+}
+
+func preparePartialList(list []int, index int, options parser.Options) (partialList []int) {
+	if index >= len(list) {
+		panic("index out of range")
+	}
+
+	var part1 []int
+	if index > 0 {
+		part1 = list[:index]
+	}
+	partialList = append(partialList, part1...)
+
+	var part2 []int
+	if index < len(list)-1 {
+		part2 = list[index+1:]
+	}
+	partialList = append(partialList, part2...)
+
+	return partialList
 }
 
 func isIncreasing(list []int, options parser.Options) bool {
